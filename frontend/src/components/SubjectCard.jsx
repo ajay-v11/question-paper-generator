@@ -29,9 +29,10 @@ const SubjectCard = ({ subject, onAction }) => {
       <div className="bg-gray-50 px-5 py-3">
         <div className="text-sm">
           <button
-            onClick={() => onAction ? onAction(subject) : navigate(`/subjects/${subject.id}`)}
+            onClick={() => onAction ? onAction(subject) : navigate(`/subjects/${subject.id}/create-paper`, { state: { subjectName: subject.name } })}
             className="font-medium text-indigo-600 hover:text-indigo-500 flex items-center"
           >
+
             Create Paper <ArrowRight className="ml-1 h-4 w-4" />
           </button>
         </div>

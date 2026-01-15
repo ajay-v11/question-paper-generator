@@ -3,9 +3,11 @@ import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import FacultyDashboard from './pages/FacultyDashboard';
+import CreatePaper from './pages/CreatePaper';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
+
   return (
     <Router>
       <AuthProvider>
@@ -29,8 +31,18 @@ function App() {
               </ProtectedRoute>
             } 
           />
+
+          <Route 
+            path="/subjects/:subjectId/create-paper" 
+            element={
+              <ProtectedRoute allowedRoles={['faculty']}>
+                <CreatePaper />
+              </ProtectedRoute>
+            } 
+          />
           
           <Route path="/" element={<Navigate to="/login" replace />} />
+
         </Routes>
       </AuthProvider>
     </Router>
