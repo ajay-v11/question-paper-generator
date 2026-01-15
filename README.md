@@ -38,6 +38,4 @@
    pnpm dev
    ```
 
-### 4. Login Credentials
-- **Email**: `admin@jenisha.com`
-- **Password**: `admin123`
+
