@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, subjects, documents, papers
+from app.api import auth, subjects, documents, papers, rag, generation
 
 app = FastAPI(title="Jenisha Question Paper Generator")
 
@@ -22,6 +22,8 @@ app.include_router(auth.router, prefix="/api", tags=["auth"])
 app.include_router(subjects.router, prefix="/api", tags=["subjects"])
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 app.include_router(papers.router, prefix="/api/papers", tags=["papers"])
+app.include_router(rag.router, prefix="/api/rag", tags=["rag"])
+app.include_router(generation.router, prefix="/api/generation", tags=["generation"])
 
 
 @app.get("/")

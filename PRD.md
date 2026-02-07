@@ -8,6 +8,14 @@
 
 The AI-Powered Question Paper Generator is an intelligent educational tool designed to automate the creation of question papers for college faculty members. The system uses artificial intelligence and natural language processing to generate contextually relevant, syllabus-aligned questions from reference materials, eliminating the time-consuming manual process of question paper creation.
 
+**Technical Stack**:
+- **Frontend**: React (Vite) + Tailwind CSS (v4)
+- **Backend**: FastAPI (Python 3.12+) + Supabase (Postgres + pgvector)
+- **AI/ML Engine**:
+  - **OCR**: Mistral OCR (via `mistralai`) for document understanding
+  - **Generation**: Groq (Llama 3.3 70B Versatile) for high-quality question synthesis
+  - **Orchestration**: LangChain + RAG (Retrieval-Augmented Generation) pipeline
+
 ### 1.2 Problem Statement
 
 Currently, educators face several challenges:
@@ -31,20 +39,38 @@ Currently, educators face several challenges:
 
 ## 2. Target Users
 
-### 2.1 Primary Users
+### 2.1 User Roles
+
+**Administrator**
+- System administrators with full access
+- Manages degrees, semesters, subjects, and user accounts
+- Allocates subjects to faculty and enrolls students
 
 **College Faculty Members**
-
 - Professors and lecturers across various departments
-- Subject matter experts teaching multiple courses
+- Subject matter experts teaching multiple courses (cross-functional across degrees/semesters)
 - Educators responsible for examination preparation
+- Generate official question papers for exams
+
+**Students**
+- Enrolled in a specific degree program and semester
+- Access study materials uploaded by faculty
+- Generate practice papers for self-study (separate from exam papers)
+- Participate in quizzes for self-assessment
 
 ### 2.2 User Characteristics
 
+**Faculty**
 - Technical proficiency: Basic to intermediate computer skills
 - Domain expertise: High subject knowledge
 - Time constraints: Limited availability for administrative tasks
-- Need: Efficient, reliable question generation
+- Need: Efficient, reliable question generation for exams
+
+**Students**
+- Technical proficiency: Comfortable with web applications
+- Domain expertise: Learning stage
+- Time constraints: Balancing multiple subjects
+- Need: Access to study materials and practice resources
 
 ---
 
@@ -62,20 +88,60 @@ Currently, educators face several challenges:
 #### Admin-Only Registration
 
 - **Admin accounts**: Pre-configured in backend database
-- **Registration capability**: Only admins can register new faculty members
-- **Registration flow**:
+- **Registration capability**: Only admins can register new faculty members AND students
+- **Faculty Registration flow**:
   - Admin logs in with admin credentials
   - Access "Register Faculty" section
-  - Enter new faculty details (name, username, password, allocated subjects)
+  - Enter new faculty details (name, username, password)
   - Submit to create new faculty account
-- **No self-registration**: Faculty cannot create their own accounts
+- **Student Registration flow**:
+  - Admin accesses "Register Student" section
+  - Enter student details (name, username, password, degree, semester)
+  - Submit to create new student account with enrollment
+- **No self-registration**: Faculty and students cannot create their own accounts
 
-### 3.2 Dashboard
+### 3.2 Degree & Semester Management (Admin)
+
+#### Degree Programs
+
+- **CRUD Operations**: Admin can create, view, update, delete degree programs
+- **Degree Information**:
+  - Name (e.g., "Bachelor of Computer Application")
+  - Code (e.g., "BCA")
+  - Description (optional)
+  - Total semesters (e.g., 6 or 8)
+- **Examples**: BCA, MCA, B.Tech CSE, Masters in Data Science
+
+#### Semester Management
+
+- **Linked to Degrees**: Each semester belongs to a specific degree
+- **Semester Numbers**: 1 through N (based on degree's total semesters)
+- **Subject Assignment**: Admin assigns subjects to specific degree + semester combinations
+
+#### Subject-Degree-Semester Mapping
+
+- **Hierarchical Structure**:
+  ```
+  Degree (BCA)
+    └── Semester 3
+          ├── DBMS
+          ├── Data Structures
+          └── Operating Systems
+    └── Semester 5
+          ├── Computer Networks
+          └── Software Engineering
+  ```
+- **Admin Actions**:
+  - Assign existing subjects to degree/semester
+  - Remove subjects from degree/semester
+  - View all subjects under a degree/semester
+
+### 3.3 Faculty Dashboard
 
 #### Welcome Screen
 
 - **Personalized greeting**: "Welcome [Faculty Name]"
-- **Subject allocation display**: Shows all subjects assigned to faculty
+- **Subject allocation display**: Shows all subjects assigned to faculty (across multiple degrees/semesters)
 - **Quick statistics cards**:
   - Total Allocated Subjects
   - Total Papers Generated
@@ -84,10 +150,11 @@ Currently, educators face several challenges:
 #### Subject Cards
 
 - **Visual representation**: Each assigned subject displayed as a card
-- **Subject information**: Subject name and relevant details
+- **Subject information**: Subject name, degree, semester
 - **Primary action**: "Create Paper" button on each card
+- **Cross-functional display**: Faculty sees subjects from all degrees/semesters they teach
 
-### 3.3 Question Paper Creation Workflow
+### 3.4 Question Paper Creation Workflow (Faculty)
 
 #### Step 1: Unit Selection
 
@@ -213,7 +280,7 @@ Currently, educators face several challenges:
 - **Edit/Back**: Return to previous steps to modify
 - **Generate Paper**: Finalize and create the question paper
 
-### 3.4 AI Generation Engine (Conceptual)
+### 3.5 AI Generation Engine (Conceptual)
 
 #### Intelligence Requirements
 
@@ -263,7 +330,7 @@ Currently, educators face several challenges:
 - **Topic coverage**: Ensure coverage of major topics from each unit
 - **Balanced generation**: Avoid over-representation of any single unit
 
-### 3.5 Paper Management
+### 3.6 Faculty Paper Management
 
 #### View Generated Papers
 
@@ -287,48 +354,164 @@ Currently, educators face several challenges:
 - **Header information**: Subject, units, date, faculty name
 - **Export options**: PDF, DOCX, or print-friendly format
 
+### 3.7 Student Dashboard
+
+#### Welcome Screen
+
+- **Personalized greeting**: "Welcome [Student Name]"
+- **Enrollment display**: Shows current degree and semester
+- **Quick statistics cards**:
+  - Total Subjects (in current semester)
+  - Practice Papers Generated
+  - Quizzes Attempted
+
+#### Subject Browsing
+
+- **Restricted Access**: Students see ONLY subjects from their enrolled degree + semester
+- **Subject Cards**: Each subject displayed as a card with:
+  - Subject name and code
+  - Faculty name (who teaches this subject)
+  - "View Materials" button
+  - "Practice Paper" button
+  - "Take Quiz" button
+
+#### Subject Detail View
+
+- **Subject Information**: Name, code, description
+- **Syllabus**: View syllabus content per unit
+- **Reference Materials**: Download/view raw files uploaded by faculty (PDFs, DOCX, etc.)
+- **Unit-wise Organization**: Materials organized by unit numbers
+
+### 3.8 Practice Paper Generation (Student)
+
+#### Purpose
+
+Students can generate their own practice papers for self-study. These are **completely separate** from faculty-generated exam papers and are never exposed to faculty.
+
+#### Workflow
+
+**Step 1: Subject Selection**
+- Student selects from their enrolled subjects
+
+**Step 2: Unit Selection**
+- Same as faculty: select one or multiple units (1-5)
+
+**Step 3: Question Configuration**
+- Select question types (MCQ, Fill in Blanks, Short, Long)
+- Enter quantity for each type
+- Select difficulty level (Easy/Medium/Hard)
+
+**Step 4: Generate**
+- AI generates questions using faculty-uploaded content
+- Questions stored in `practice_papers` table (separate from `papers`)
+
+#### Practice Paper Management
+
+- **List view**: All practice papers generated by the student
+- **Actions**: View, Download (PDF/DOCX), Delete
+- **History preserved**: Even when student moves to next semester
+
+### 3.9 Quiz System (Student)
+
+#### Purpose
+
+Interactive self-assessment quizzes for students to test their knowledge in real-time.
+
+#### Quiz Types
+
+- **MCQ Quiz**: Multiple choice questions with 4 options
+- **Fill in the Blanks Quiz**: Type-in answers
+
+#### Quiz Flow
+
+**Starting a Quiz**:
+1. Student selects a subject
+2. Chooses quiz type (MCQ or Fill in Blanks)
+3. Selects units to cover
+4. Sets number of questions (e.g., 10, 20, 30)
+5. Clicks "Start Quiz"
+
+**Taking a Quiz**:
+- **Timed or Untimed**: Optional timer per question or total quiz
+- **One question at a time**: Clean, focused interface
+- **Progress indicator**: Shows current question number
+- **Submit button**: Move to next question
+
+**Quiz Completion**:
+- **Instant scoring**: Show score immediately (e.g., 8/10 = 80%)
+- **Review mode**: Show correct answers vs. student answers
+- **Explanations**: Display answer explanations (if available)
+
+#### Quiz History
+
+- **Attempt tracking**: Store all quiz attempts
+- **Information stored**:
+  - Subject and units covered
+  - Score and percentage
+  - Date and time
+  - Individual answers (for review)
+- **Progress visualization**: Track improvement over time
+
 ---
 
 ## 4. System Modules
 
 ### 4.1 Authentication Module
 
-- Faculty login validation
+- Multi-role login validation (Admin, Faculty, Student)
+- Role-based routing after login
 - Session management
 - Credential verification against backend database
 
 ### 4.2 Admin Module
 
 - Admin login validation
-- Faculty registration capability
-- New faculty account creation with subject allocation
+- **Degree Management**: Create, update, delete degree programs
+- **Semester Management**: Configure semesters per degree
+- **Subject Management**: Create subjects, assign to degree/semester
+- **Faculty Registration**: Create faculty accounts
+- **Student Registration**: Create student accounts with degree/semester enrollment
+- **Faculty Allocation**: Assign subjects to faculty (cross-functional)
+- **Student Progression**: Manually update student semester
 - Session management for admin users
 
-### 4.3 User Profile Module
+### 4.3 Faculty Profile Module
 
 - Faculty information management
-- Subject allocation mapping
+- Subject allocation mapping (across multiple degrees/semesters)
 - Dashboard statistics calculation
 
-### 4.4 Content Management Module
+### 4.4 Student Profile Module
+
+- Student information management
+- Degree and semester enrollment tracking
+- Practice paper history
+- Quiz attempt history
+- Semester progression (with history preservation)
+
+### 4.5 Content Management Module
 
 - File upload handling (PDF, DOCX, TXT)
-- OCR processing for scanned documents
+- **OCR Processing**: Integration with Mistral OCR to extract rich text, tables, and equations from scanned PDFs and images
 - Text extraction and cleaning
 - Syllabus parsing
 - Unit-wise content organization
 
-### 4.5 AI Processing Module
+### 4.6 AI Processing Module
 
-- Natural Language Processing
-- Content comprehension and analysis
-- Keyword and concept extraction
+- **RAG Pipeline (Retrieval-Augmented Generation)**:
+  - Chunking of uploaded content into semantic segments
+  - Vector embedding generation (using `sentence-transformers` or OpenAI)
+  - Storage in Supabase `pgvector` for semantic retrieval
+- **Generation Engine (Groq/Llama 3.3)**:
+  - Context-aware prompt construction using retrieved chunks
+  - Question generation logic based on Bloom's taxonomy
+  - Difficulty level calibration
+  - Structured JSON output parsing for consistent formatting
 - Subject type identification
-- Question generation logic
-- Difficulty level calibration
 - Custom instruction handling
 
-### 4.6 Question Generation Module
+### 4.7 Question Generation Module
 
 - MCQ generation with options
 - Fill-in-the-blank creation
@@ -336,21 +519,33 @@ Currently, educators face several challenges:
 - Long answer development
 - Question type-specific formatting
 
-### 4.7 Paper Management Module
+### 4.8 Paper Management Module
 
+- **Faculty Papers**: Exam papers storage and management
+- **Practice Papers**: Student-generated practice papers (separate storage)
 - Paper preview generation
 - Paper naming and metadata
-- Paper storage
 - Retrieval and display
 - Deletion functionality
 
-### 4.8 Database Module
+### 4.9 Quiz Module
 
-- Admin credentials storage
-- Faculty credentials storage
-- Subject allocation data
+- Quiz session management
+- Real-time question serving
+- Answer validation and scoring
+- Attempt history tracking
+- Progress analytics
+
+### 4.10 Database Module
+
+- **User Management**: Admin, faculty, and student credentials
+- **Academic Structure**: Degrees, semesters, subjects
+- **Enrollments**: Student-degree-semester mappings
+- **Allocations**: Faculty-subject mappings
 - Reference material storage
-- Generated paper records
+- Faculty exam paper records
+- Student practice paper records
+- Quiz attempt records
 - Usage statistics tracking
 
 ---
@@ -363,21 +558,31 @@ START
 LOGIN PAGE
   ├── Enter username and password
   ├── Click "Login"
-  ├── If credentials valid → Continue
-  ├── If admin → Show admin dashboard with "Register Faculty" option
-  └── If credentials invalid → Show error "Invalid username/password"
+  ├── If credentials invalid → Show error "Invalid username/password"
+  ├── If admin → Go to ADMIN DASHBOARD
+  ├── If faculty → Go to FACULTY DASHBOARD
+  └── If student → Go to STUDENT DASHBOARD
   ↓
-ADMIN DASHBOARD (Admin only)
+═══════════════════════════════════════════════════════════════
+                        ADMIN FLOW
+═══════════════════════════════════════════════════════════════
+ADMIN DASHBOARD
   ├── Display "Welcome Admin"
-  ├── Access "Register Faculty" section
-  ├── Enter new faculty details
-  ├── Submit to create account
-  └── Return to admin dashboard
+  ├── Manage Degrees → Create/Edit/Delete degree programs
+  ├── Manage Subjects → Create subjects, assign to degree/semester
+  ├── Register Faculty → Enter details, create account
+  ├── Register Student → Enter details, assign degree/semester
+  ├── Allocate Subjects → Assign subjects to faculty
+  ├── Manage Students → Update semester, view enrollments
+  └── Logout
   ↓
+═══════════════════════════════════════════════════════════════
+                       FACULTY FLOW
+═══════════════════════════════════════════════════════════════
 FACULTY DASHBOARD
   ├── Display "Welcome [Faculty Name]"
   ├── Show statistics cards (Total Subjects, Total Papers, View Papers)
-  ├── Display subject cards with "Create Paper" button
+  ├── Display subject cards (across all degrees/semesters)
   └── Select subject → Click "Create Paper"
   ↓
 UNIT SELECTION
@@ -387,7 +592,7 @@ UNIT SELECTION
   ↓
 CONTENT UPLOAD (For each selected unit)
   ├── Upload/Enter syllabus (mandatory)
-  ├── Upload reference material (PDF/DOCX/TXT) OR Enter text content (mandatory - one option)
+  ├── Upload reference material (PDF/DOCX/TXT) OR Enter text content
   ├── Repeat for each selected unit
   └── Click "Next"
   ↓
@@ -399,27 +604,55 @@ QUESTION CONFIGURATION
   └── Click "Next"
   ↓
 PREVIEW & CONFIRMATION
-  ├── Review all inputs (units, syllabus, materials, question config, custom instructions)
+  ├── Review all inputs
   ├── Option to rename paper
   ├── Edit previous steps if needed
   └── Click "Generate Paper"
   ↓
-AI PROCESSING
-  ├── Analyze syllabus and reference materials
-  ├── Identify subject type
-  ├── Incorporate custom instructions (if provided)
-  ├── Generate varied questions based on difficulty and instructions
-  └── Format question paper
-  ↓
-PAPER GENERATED
+AI PROCESSING → PAPER GENERATED
   ├── Display success message
   ├── Options: View Paper, Download Paper, Generate Another
   └── Paper saved to "View Papers Generated"
   ↓
-VIEW PAPERS (Optional)
-  ├── List all generated papers
-  ├── Actions: View, Download, Delete
+VIEW PAPERS
+  ├── List all generated exam papers
+  ├── Actions: View, Download (PDF/DOCX), Delete
   └── Return to dashboard
+  ↓
+═══════════════════════════════════════════════════════════════
+                       STUDENT FLOW
+═══════════════════════════════════════════════════════════════
+STUDENT DASHBOARD
+  ├── Display "Welcome [Student Name]"
+  ├── Show enrollment info (Degree, Semester)
+  ├── Show statistics (Subjects, Practice Papers, Quizzes)
+  └── Display subject cards (restricted to enrolled degree/semester)
+  ↓
+SUBJECT VIEW
+  ├── Select a subject card
+  ├── View subject details (name, code, syllabus)
+  ├── Download reference materials (PDFs, DOCX uploaded by faculty)
+  ├── Click "Generate Practice Paper" → Go to PRACTICE PAPER FLOW
+  └── Click "Take Quiz" → Go to QUIZ FLOW
+  ↓
+PRACTICE PAPER FLOW
+  ├── Select units (1-5)
+  ├── Configure question types and quantities
+  ├── Select difficulty level
+  ├── Click "Generate"
+  ├── AI generates practice paper (stored separately from faculty papers)
+  ├── View/Download practice paper
+  └── Return to subject or dashboard
+  ↓
+QUIZ FLOW
+  ├── Select quiz type (MCQ or Fill in the Blanks)
+  ├── Select units to cover
+  ├── Set number of questions
+  ├── Click "Start Quiz"
+  ├── Answer questions one by one
+  ├── Submit quiz
+  ├── View score and review answers
+  └── Return to subject or dashboard
   ↓
 END or RETURN TO DASHBOARD
 ```
@@ -430,39 +663,73 @@ END or RETURN TO DASHBOARD
 
 ### 6.1 Functional Requirements
 
-**FR1**: System shall authenticate faculty using pre-configured credentials
-**FR2**: System shall authenticate admin using pre-configured credentials
+#### Authentication & User Management
+**FR1**: System shall authenticate users (admin, faculty, student) using credentials
+**FR2**: System shall route users to role-specific dashboards after login
 **FR3**: System shall allow admins to register new faculty members
-**FR4**: System shall display personalized dashboard with subject allocations
-**FR5**: System shall allow selection of single or multiple units
-**FR6**: System shall accept syllabus and reference materials per unit
-**FR7**: System shall support PDF, DOCX, and TXT file uploads
-**FR8**: System shall perform OCR on scanned documents
-**FR9**: System shall allow configuration of question types and quantities
-**FR10**: System shall provide three difficulty levels
-**FR11**: System shall generate varied questions with different phrasings for each request
-**FR12**: System shall accept optional custom instructions for priority topics
-**FR13**: System shall incorporate custom instructions into AI generation prompt
-**FR14**: System shall recognize subject types (theory, programming, math, diagrams)
-**FR15**: System shall generate subject-appropriate questions
-**FR16**: System shall combine content from multiple units when selected
-**FR17**: System shall provide preview before final generation
-**FR18**: System shall allow paper renaming
-**FR19**: System shall store generated papers with metadata
-**FR20**: System shall allow viewing and deletion of past papers
-**FR21**: System shall export papers in standard formats
+**FR4**: System shall allow admins to register new students with degree/semester enrollment
+
+#### Academic Structure (Admin)
+**FR5**: System shall allow admins to create, update, delete degree programs
+**FR6**: System shall allow admins to configure semesters per degree
+**FR7**: System shall allow admins to create subjects and assign to degree/semester
+**FR8**: System shall allow admins to allocate subjects to faculty (cross-functional)
+**FR9**: System shall allow admins to update student semester (manual progression)
+
+#### Faculty Features
+**FR10**: System shall display personalized faculty dashboard with allocated subjects
+**FR11**: System shall allow selection of single or multiple units for paper creation
+**FR12**: System shall accept syllabus and reference materials per unit
+**FR13**: System shall support PDF, DOCX, and TXT file uploads
+**FR14**: System shall perform OCR on scanned documents (Mistral OCR)
+**FR15**: System shall allow configuration of question types and quantities
+**FR16**: System shall provide three difficulty levels (Easy, Medium, Hard)
+**FR17**: System shall generate varied questions with different phrasings
+**FR18**: System shall accept optional custom instructions for priority topics
+**FR19**: System shall incorporate custom instructions into AI generation
+**FR20**: System shall recognize subject types (theory, programming, math, diagrams)
+**FR21**: System shall combine content from multiple units when selected
+**FR22**: System shall provide preview before final generation
+**FR23**: System shall store faculty-generated exam papers with metadata
+**FR24**: System shall allow viewing, downloading, and deletion of exam papers
+**FR25**: System shall export papers in PDF and DOCX formats
+
+#### Student Features
+**FR26**: System shall restrict student access to subjects in their enrolled degree/semester
+**FR27**: System shall display student dashboard with enrollment info and statistics
+**FR28**: System shall allow students to view subject details and syllabus
+**FR29**: System shall allow students to download reference materials uploaded by faculty
+**FR30**: System shall allow students to generate practice papers (separate from exam papers)
+**FR31**: System shall store practice papers per student (never visible to faculty)
+**FR32**: System shall preserve student history when semester changes
+
+#### Quiz System
+**FR33**: System shall allow students to take MCQ quizzes
+**FR34**: System shall allow students to take Fill-in-the-Blanks quizzes
+**FR35**: System shall provide instant scoring after quiz submission
+**FR36**: System shall allow review of correct answers after quiz completion
+**FR37**: System shall track all quiz attempts with scores and dates
 
 ### 6.2 Non-Functional Requirements
 
-**NFR1 - Performance**: Paper generation should complete within 2-3 minutes **NFR2 - Usability**: Interface should be intuitive for non-technical users **NFR3 - Reliability**: System should generate valid questions 95%+ of the time **NFR4 - Scalability**: Support multiple concurrent faculty users **NFR5 - Uniqueness & Custom Instructions**: Questions vary per generation with different phrasings; faculty can use custom instructions to ensure priority topics are covered **NFR6 - Security**: Secure authentication and data protection **NFR7 - Availability**: System accessible 24/7 **NFR8 - Accuracy**: Questions must align with provided syllabus and materials
+**NFR1 - Performance**: Paper generation should complete within 2-3 minutes
+**NFR2 - Usability**: Interface should be intuitive for non-technical users
+**NFR3 - Reliability**: System should generate valid questions 95%+ of the time
+**NFR4 - Scalability**: Support multiple concurrent users (admin, faculty, students)
+**NFR5 - Uniqueness**: Questions vary per generation with different phrasings
+**NFR6 - Security**: Secure authentication, role-based access control, data isolation
+**NFR7 - Availability**: System accessible 24/7
+**NFR8 - Accuracy**: Questions must align with provided syllabus and materials
+**NFR9 - Data Isolation**: Student practice papers never visible to faculty; faculty exam papers never visible to students
 
 ### 6.3 Constraints
 
-**C1**: AI must be free and accessible without paid subscription
+**C1**: AI must be free or low-cost (Groq free tier, Mistral API)
 **C2**: Must work with uploaded content (no external data sources initially)
-**C3**: Backend database pre-populated with admin and faculty credentials
-**C4**: Faculty registration only via admin (no self-registration)
-**C5**: Subject allocation managed at backend level
+**C3**: Admin accounts pre-configured in backend database
+**C4**: Faculty and student registration only via admin (no self-registration)
+**C5**: Students restricted to their enrolled degree/semester
+**C6**: Subject allocation to faculty managed by admin
 
 ---
 
@@ -498,17 +765,26 @@ END or RETURN TO DASHBOARD
 - **Target**: 95%+ of custom instruction topics appear in generated questions
 - **Measure**: Manual verification or keyword matching on generated papers
 
+### 7.7 Student Engagement
+
+- **Target**: 60%+ of students generate at least one practice paper per month
+- **Measure**: Practice paper count per student
+
+### 7.8 Quiz Participation
+
+- **Target**: Average 5+ quiz attempts per student per month
+- **Measure**: Quiz attempt frequency and completion rate
+
 ---
 
 ## 8. Future Enhancements (Out of Scope for V1)
 
 ### 8.1 Advanced Features
 
-- Question bank storage for reuse
 - Collaborative paper creation among faculty
-- Student difficulty analysis and adaptive generation
 - Integration with Learning Management Systems (LMS)
 - Mobile application
+- Student progress analytics and recommendations
 
 ### 8.2 Enhanced AI Capabilities
 
@@ -517,6 +793,7 @@ END or RETURN TO DASHBOARD
 - Bloom's taxonomy level tagging
 - Question clustering by topic
 - Automatic question review and quality scoring
+- Adaptive difficulty based on student quiz performance
 
 ### 8.3 Administrative Features
 
@@ -552,22 +829,23 @@ END or RETURN TO DASHBOARD
 
 ### 10.1 External Dependencies
 
-- Free AI/NLP service for question generation
-- OCR library for document scanning
-- File processing libraries for PDF/DOCX handling
+- **AI Generation**: Groq API (Free tier/Developer plan) using Llama-3.3-70b
+- **OCR Service**: Mistral API (`mistral-ocr-latest`) for document processing
+- **Orchestration**: LangChain framework
+- **Database**: Supabase (PostgreSQL with `pgvector` extension)
 
 ### 10.2 Internal Dependencies
 
 - Backend database with faculty and subject data
-- Content hosting for uploaded materials
-- Authentication system
+- Content hosting for uploaded materials (Supabase Storage)
+- Authentication system (JWT-based)
 
 ---
 
 ## Document Control
 
-**Version**: 1.0  
-**Date**: January 12, 2026  
-**Status**: Draft for Review  
+**Version**: 2.0  
+**Date**: January 17, 2026  
+**Status**: Updated with Student Role, Degree/Semester Structure, Practice Papers, Quiz System  
 **Owner**: Product Team  
 **Reviewers**: Development Team, Faculty Representatives, Academic Leadership

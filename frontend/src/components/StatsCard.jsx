@@ -8,9 +8,12 @@ const colorVariants = {
   yellow: 'bg-yellow-500',
 };
 
-const StatsCard = ({ name, stat, icon: Icon, color = 'indigo' }) => {
+const StatsCard = ({ name, stat, icon: Icon, color = 'indigo', onClick }) => {
   return (
-    <div className="bg-white overflow-hidden shadow rounded-lg">
+    <div 
+      className={`bg-white overflow-hidden shadow rounded-lg ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+      onClick={onClick}
+    >
       <div className="p-5">
         <div className="flex items-center">
           <div className="flex-shrink-0">

@@ -112,7 +112,6 @@ async def deallocate_subject(
 async def get_faculty_stats(
     current_user: UserResponse = Depends(deps.get_current_user),
 ):
-    # 1. Count allocated subjects
     allocations = (
         supabase.table("faculty_subjects")
         .select("id", count="exact")
@@ -123,12 +122,32 @@ async def get_faculty_stats(
         allocations.count if allocations.count is not None else len(allocations.data)
     )
 
-    # 2. Count papers generated (Phase 3 placeholder: assume 0 for now)
-    # In future: papers = supabase.table("papers").select("id", count="exact").eq("faculty_id", str(current_user.id)).execute()
-    papers_generated = 0
+    papers_query = (
+        supabase.table("papers")
+        .select("id, title, subjects(name), created_at", count="exact")
+        .eq("faculty_id", str(current_user.id))
+        .order("created_at", desc=True)
+        .execute()
+    )
 
-    # 3. Recent papers
+    papers_generated = (
+        papers_query.count if papers_query.count is not None else len(papers_query.data)
+    )
+
     recent_papers = []
+
+    for p in papers_query.data[:5]:
+        subj = p.get("subjects")
+        subj_name = subj.get("name") if isinstance(subj, dict) else "Unknown"
+
+        recent_papers.append(
+            {
+                "id": p.get("id"),
+                "title": p.get("title"),
+                "subject_name": subj_name,
+                "date": p.get("created_at"),
+            }
+        )
 
     return FacultyStats(
         total_subjects=total_subjects,

@@ -31,7 +31,14 @@ class FacultySubjectResponse(SubjectResponse):
     pass
 
 
+class RecentPaper(BaseModel):
+    id: UUID
+    title: str
+    subject_name: str
+    date: datetime
+
+
 class FacultyStats(BaseModel):
     total_subjects: int
     papers_generated: int
-    recent_papers: List[str] = []
+    recent_papers: List[RecentPaper] = []

@@ -1,13 +1,33 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-const FileUpload = ({ onDrop, accept, multiple = false, disabled = false }) => {
+const FileUpload = ({ onDrop, accept, multiple = false, disabled = false, maxSize = 10 * 1024 * 1024 }) => {
+  const handleDrop = useCallback((acceptedFiles, fileRejections) => {
+    if (fileRejections.length > 0) {
+      fileRejections.forEach(({ file, errors }) => {
+        errors.forEach(err => {
+          if (err.code === 'file-too-large') {
+            toast.error(`File ${file.name} is too large. Max size is ${maxSize / (1024 * 1024)}MB.`);
+          } else {
+            toast.error(`Error with ${file.name}: ${err.message}`);
+          }
+        });
+      });
+    }
+    
+    if (acceptedFiles.length > 0) {
+      onDrop(acceptedFiles);
+    }
+  }, [onDrop, maxSize]);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+    onDrop: handleDrop,
     accept,
     multiple,
     disabled,
+    maxSize,
   });
 
   return (
@@ -27,7 +47,7 @@ const FileUpload = ({ onDrop, accept, multiple = false, disabled = false }) => {
         ) : (
           <div className="space-y-1">
             <p className="text-gray-700 font-medium">Drag & drop files here, or click to select</p>
-            <p className="text-gray-500 text-xs">Supported formats: PDF, DOCX, TXT</p>
+            <p className="text-gray-500 text-xs">Supported formats: PDF, DOCX, TXT (Max {maxSize / (1024 * 1024)}MB)</p>
           </div>
         )}
       </div>

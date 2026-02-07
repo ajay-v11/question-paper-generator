@@ -21,7 +21,7 @@
    ```
 3. Run the server:
    ```bash
-   uv run uvicorn app.main:app --reload
+   uv run python -m uvicorn app.main:app --reload
    ```
 
 ### 3. Frontend Setup

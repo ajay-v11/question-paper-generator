@@ -4,6 +4,8 @@ import { FileText, CheckCircle } from 'lucide-react';
 const PreviewSummary = ({ formData, title, onTitleChange }) => {
   const { selectedUnits, unitContent, questionConfig, difficulty, customInstructions } = formData;
   const totalQuestions = Object.values(questionConfig).reduce((a, b) => a + b, 0);
+  const unitCount = selectedUnits.length;
+  const questionsPerUnit = unitCount > 0 ? (totalQuestions / unitCount).toFixed(1) : 0;
 
   return (
     <div className="space-y-8">
@@ -51,6 +53,11 @@ const PreviewSummary = ({ formData, title, onTitleChange }) => {
                   <span>Short: {questionConfig.short}</span>
                   <span>Long: {questionConfig.long}</span>
                 </div>
+                {unitCount > 0 && (
+                   <div className="mt-3 text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-100">
+                     Estimated ~{questionsPerUnit} questions per unit
+                   </div>
+                )}
               </div>
             </div>
           </div>

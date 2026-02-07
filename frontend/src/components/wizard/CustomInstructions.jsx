@@ -1,6 +1,19 @@
 import React from 'react';
 
 const CustomInstructions = ({ instructions, onInstructionsChange }) => {
+  const templates = [
+    "Focus on theoretical concepts and definitions.",
+    "Include at least one case study question.",
+    "Prioritize questions on the OSI model.",
+    "Ensure questions are application-based.",
+    "Include diagram-based questions."
+  ];
+
+  const addTemplate = (text) => {
+    const newText = instructions ? `${instructions}\n${text}` : text;
+    onInstructionsChange(newText);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -9,6 +22,17 @@ const CustomInstructions = ({ instructions, onInstructionsChange }) => {
       </div>
 
       <div className="space-y-2">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {templates.map((temp, i) => (
+            <button
+              key={i}
+              onClick={() => addTemplate(temp)}
+              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-full transition-colors border border-gray-200"
+            >
+              + {temp}
+            </button>
+          ))}
+        </div>
         <textarea
           rows={8}
           className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

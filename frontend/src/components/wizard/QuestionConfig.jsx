@@ -1,4 +1,5 @@
 import React from 'react';
+import { Info } from 'lucide-react';
 
 const QuestionConfig = ({ config, onConfigChange, difficulty, onDifficultyChange }) => {
   const handleCountChange = (type, value) => {
@@ -53,7 +54,15 @@ const QuestionConfig = ({ config, onConfigChange, difficulty, onDifficultyChange
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm text-gray-600">Multiple Choice (MCQ)</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-gray-600">Multiple Choice (MCQ)</label>
+              <div className="group relative">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded p-2 z-10">
+                  Standard 4-option MCQs with one correct answer.
+                </div>
+              </div>
+            </div>
             <input
               type="number"
               min="0"
@@ -63,7 +72,15 @@ const QuestionConfig = ({ config, onConfigChange, difficulty, onDifficultyChange
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm text-gray-600">Fill in the Blanks</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-gray-600">Fill in the Blanks</label>
+              <div className="group relative">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded p-2 z-10">
+                  Sentences with missing keywords.
+                </div>
+              </div>
+            </div>
             <input
               type="number"
               min="0"
@@ -73,7 +90,15 @@ const QuestionConfig = ({ config, onConfigChange, difficulty, onDifficultyChange
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm text-gray-600">Short Answer</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-gray-600">Short Answer</label>
+              <div className="group relative">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded p-2 z-10">
+                  Questions requiring 2-3 sentence answers (2-5 marks).
+                </div>
+              </div>
+            </div>
             <input
               type="number"
               min="0"
@@ -83,7 +108,15 @@ const QuestionConfig = ({ config, onConfigChange, difficulty, onDifficultyChange
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm text-gray-600">Long Answer</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-gray-600">Long Answer</label>
+              <div className="group relative">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded p-2 z-10">
+                  Detailed questions requiring paragraph answers (10+ marks).
+                </div>
+              </div>
+            </div>
             <input
               type="number"
               min="0"

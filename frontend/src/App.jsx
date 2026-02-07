@@ -1,18 +1,24 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import FacultyDashboard from './pages/FacultyDashboard';
 import CreatePaper from './pages/CreatePaper';
+import GeneratedPaper from './pages/GeneratedPaper';
+import PapersList from './pages/PapersList';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
 
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <Toaster position="top-right" />
+          <Routes>
+            <Route path="/login" element={<Login />} />
           
           <Route 
             path="/admin-dashboard" 
@@ -32,20 +38,39 @@ function App() {
             } 
           />
 
-          <Route 
-            path="/subjects/:subjectId/create-paper" 
+          <Route
+            path="/subjects/:subjectId/create-paper"
             element={
               <ProtectedRoute allowedRoles={['faculty']}>
                 <CreatePaper />
               </ProtectedRoute>
-            } 
+            }
           />
-          
+
+          <Route
+            path="/papers"
+            element={
+              <ProtectedRoute allowedRoles={['faculty']}>
+                <PapersList />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/papers/:paperId"
+            element={
+              <ProtectedRoute allowedRoles={['faculty']}>
+                <GeneratedPaper />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="/" element={<Navigate to="/login" replace />} />
 
-        </Routes>
-      </AuthProvider>
-    </Router>
+          </Routes>
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

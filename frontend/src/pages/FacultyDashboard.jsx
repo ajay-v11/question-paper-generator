@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { getPapers } from '../services/paperService';
 import SubjectCard from '../components/SubjectCard';
 import StatsCard from '../components/StatsCard';
 import { useAuth } from '../context/AuthContext';
-import { Book, FileText, BarChart2, LogOut, Loader2 } from 'lucide-react';
+import { Book, FileText, BarChart2, LogOut, Loader2, Eye, Calendar } from 'lucide-react';
 
 const FacultyDashboard = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [subjects, setSubjects] = useState([]);
   const [stats, setStats] = useState({ total_subjects: 0, papers_generated: 0, recent_papers: [] });
+  const [papers, setPapers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,12 +21,14 @@ const FacultyDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [subjectsRes, statsRes] = await Promise.all([
+      const [subjectsRes, statsRes, papersRes] = await Promise.all([
         api.get('/faculty/subjects'),
-        api.get('/faculty/stats')
+        api.get('/faculty/stats'),
+        getPapers()
       ]);
       setSubjects(subjectsRes.data);
       setStats(statsRes.data);
+      setPapers(papersRes);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
@@ -67,7 +73,13 @@ const FacultyDashboard = () => {
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                         <StatsCard name="Total Subjects" stat={stats.total_subjects} icon={Book} color="indigo" />
                         <StatsCard name="Papers Generated" stat={stats.papers_generated} icon={FileText} color="green" />
-                        <StatsCard name="View Papers" stat="Go to List" icon={BarChart2} color="purple" />
+                        <StatsCard 
+                            name="View Papers" 
+                            stat="Go to List" 
+                            icon={BarChart2} 
+                            color="purple" 
+                            onClick={() => navigate('/papers')}
+                        />
                     </div>
 
                     {/* Subjects Section */}
@@ -80,6 +92,71 @@ const FacultyDashboard = () => {
                             {subjects.length === 0 && (
                                 <div className="col-span-full text-center py-8 text-gray-500 bg-white rounded-lg shadow">
                                     No subjects allocated yet. Contact your administrator.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Papers Section */}
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold text-gray-900">Recent Papers</h2>
+                            <button 
+                                onClick={() => navigate('/papers')}
+                                className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                            >
+                                View all
+                            </button>
+                        </div>
+                        <div className="bg-white shadow rounded-lg overflow-hidden">
+                            {papers.length > 0 ? (
+                                <ul className="divide-y divide-gray-200">
+                                    {papers.map((paper) => (
+                                        <li key={paper.id} className="p-4 hover:bg-gray-50 transition-colors">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center space-x-3">
+                                                        <FileText className="h-5 w-5 text-gray-400" />
+                                                        <div>
+                                                            <p className="text-sm font-medium text-indigo-600">{paper.title}</p>
+                                                            <p className="text-sm text-gray-500">
+                                                                Units: {paper.units?.join(', ') || 'N/A'} |
+                                                                Difficulty: {paper.difficulty?.toUpperCase() || 'N/A'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center space-x-4">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                        paper.status === 'generated'
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : paper.status === 'failed'
+                                                            ? 'bg-red-100 text-red-800'
+                                                            : 'bg-yellow-100 text-yellow-800'
+                                                    }`}>
+                                                        {paper.status === 'generated' ? 'Completed' : paper.status}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500 flex items-center">
+                                                        <Calendar className="h-3 w-3 mr-1" />
+                                                        {new Date(paper.created_at).toLocaleDateString()}
+                                                    </span>
+                                                    {paper.status === 'generated' && (
+                                                        <button
+                                                            onClick={() => navigate(`/papers/${paper.id}`)}
+                                                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
+                                                        >
+                                                            <Eye className="h-3 w-3 mr-1" />
+                                                            View
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    No papers generated yet. Create your first paper from a subject above.
                                 </div>
                             )}
                         </div>

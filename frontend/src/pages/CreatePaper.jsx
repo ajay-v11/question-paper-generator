@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import StepIndicator from '../components/wizard/StepIndicator';
 import UnitSelector from '../components/wizard/UnitSelector';
@@ -6,8 +6,8 @@ import ContentUploader from '../components/wizard/ContentUploader';
 import QuestionConfig from '../components/wizard/QuestionConfig';
 import CustomInstructions from '../components/wizard/CustomInstructions';
 import PreviewSummary from '../components/wizard/PreviewSummary';
-import { uploadDocument, saveDocumentContent, createPaperDraft } from '../services/paperService';
-import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { uploadDocument, saveDocumentContent, createPaperDraft, startGeneration, getGenerationStatus } from '../services/paperService';
+import { ChevronLeft, ChevronRight, Save, Loader2 } from 'lucide-react';
 
 const CreatePaper = () => {
   const { subjectId } = useParams();
@@ -17,7 +17,10 @@ const CreatePaper = () => {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState({ status: '', message: '' });
   const [error, setError] = useState(null);
+  const [, setCreatedPaperId] = useState(null);
 
   const [formData, setFormData] = useState({
     title: `${subjectName} - Question Paper`,
@@ -71,12 +74,68 @@ const CreatePaper = () => {
     }));
   };
 
+  // Polling function to check generation status
+  const pollGenerationStatus = useCallback(async (paperId) => {
+    const maxAttempts = 60; // 2 minutes with 2-second intervals
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const status = await getGenerationStatus(paperId);
+
+        switch (status.status) {
+          case 'pending':
+            setGenerationProgress({ status: 'pending', message: 'Initialization in progress...' });
+            break;
+          case 'processing':
+            setGenerationProgress({ status: 'processing', message: 'Generating questions using AI...' });
+            break;
+          case 'completed':
+            setGenerationProgress({ status: 'completed', message: 'Paper generated successfully!' });
+            setGenerating(false);
+            navigate(`/papers/${paperId}`, { state: { justGenerated: true } });
+            return;
+          case 'failed':
+            setGenerationProgress({ status: 'failed', message: status.error || 'Generation failed' });
+            setGenerating(false);
+            setError('Question generation failed. Please try again.');
+            return;
+        }
+
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000);
+        } else {
+          setGenerating(false);
+          setError('Generation timed out. Please check back later.');
+        }
+
+      } catch (err) {
+        console.error('Polling error:', err);
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000);
+        } else {
+          setGenerating(false);
+          setError('Failed to check generation status.');
+        }
+      }
+    };
+
+    poll();
+  }, [navigate]);
+
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
     try {
+      // Save all document content first
       for (const unit of formData.selectedUnits) {
         const content = formData.unitContent[unit];
+
+        if (content?.docId) {
+            continue;
+        }
 
         let filePath = null;
         let fileName = null;
@@ -90,7 +149,6 @@ const CreatePaper = () => {
         if (content?.file || content?.syllabus) {
             await saveDocumentContent({
                 subject_id: subjectId,
-
                 unit_number: unit,
                 file_path: filePath,
                 file_name: fileName,
@@ -100,23 +158,38 @@ const CreatePaper = () => {
         }
       }
 
-      await createPaperDraft({
+      // Create the paper draft
+      const paper = await createPaperDraft({
         subject_id: subjectId,
         title: formData.title,
-
         units: formData.selectedUnits,
         difficulty: formData.difficulty,
         custom_instructions: formData.customInstructions,
         question_config: formData.questionConfig
       });
 
-      alert('Paper draft created successfully! Generation coming soon.');
-      navigate('/faculty-dashboard');
+      setCreatedPaperId(paper.id);
+      setLoading(false);
+      setGenerating(true);
+
+      // Start question generation
+      await startGeneration({
+        paper_id: paper.id,
+        subject_id: subjectId,
+        units: formData.selectedUnits,
+        difficulty: formData.difficulty,
+        custom_instructions: formData.customInstructions,
+        question_config: formData.questionConfig
+      });
+
+      // Start polling for status
+      pollGenerationStatus(paper.id);
+
     } catch (err) {
       console.error(err);
       setError('Failed to create paper. Please try again.');
-    } finally {
       setLoading(false);
+      setGenerating(false);
     }
   };
 
@@ -144,6 +217,22 @@ const CreatePaper = () => {
             {error && (
               <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">
                 {error}
+              </div>
+            )}
+
+            {generating && (
+              <div className="mb-6 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                  <div>
+                    <h3 className="font-semibold text-blue-900">Generating Question Paper</h3>
+                    <p className="text-blue-700 text-sm">{generationProgress.message}</p>
+                  </div>
+                </div>
+                <div className="mt-4 w-full bg-blue-200 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">This may take 1-2 minutes. Please don't close this window.</p>
               </div>
             )}
 
@@ -207,12 +296,12 @@ const CreatePaper = () => {
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={loading}
+                disabled={loading || generating}
                 className={`px-6 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center shadow-md ${
-                  loading ? 'opacity-70 cursor-wait' : ''
+                  loading || generating ? 'opacity-70 cursor-wait' : ''
                 }`}
               >
-                {loading ? 'Processing...' : (
+                {loading ? 'Processing...' : generating ? 'Generating...' : (
                   <>
                     <Save className="w-4 h-4 mr-2" />
                     Generate Paper
